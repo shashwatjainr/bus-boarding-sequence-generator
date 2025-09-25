@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bus - Boarding Order</title>
+</head>
+<body>
+  <h2>Upload Booking File in Excel Format</h2>
+  <form id="fileForm">
+    <input type="file" id="fileInput" name="file" accept=".xlsx"><br><br>
+    <button type="submit">Show Sequence</button>
+  </form>
+  <pre id="output"></pre>
+  <script>
+    document.getElementById('fileForm').onsubmit = async function(e){
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await fetch('http://localhost:3000/api/upload', {
+        method: "POST",
+        body: formData
+      });
+      const seq = await resp.json();
+      let tableHtml = "<table border='2'><tr><th>Seq</th><th>Booking ID</th></tr>";
+      seq.forEach(row => {
+        tableHtml += `<tr><td>${row.Seq}</td><td>${row.Booking_ID}</td></tr>`;
+    });
+    tableHtml += "</table>";
+    document.getElementById('output').innerHTML = tableHtml;
+    }
+  </script>
+</body>
+</html>

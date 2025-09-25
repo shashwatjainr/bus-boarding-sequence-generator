@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bus Boarding Sequence</title>
+</head>
+<body>
+  <h2>Please Upload Booking File</h2>
+  <form id="fileForm">
+    <input type="file" id="fileInput" name="file" accept=".xlsx"><br><br>
+    <button type="submit">Show Sequence</button>
+  </form>
+  <div id="msg"></div>
+  <pre id="output"></pre>
+  <script>
+    document.getElementById('fileForm').onsubmit = async function(e){
+      e.preventDefault();
+      var msg = document.getElementById('msg');
+      var output = document.getElementById('output');
+      msg.textContent = '';
+      output.textContent = '';
+      var file = document.getElementById('fileInput').files[0];
+      if (!file) {
+        msg.innerHTML = "<span style='color:red;'>No file selected!</span>";
+        return;
+      }
+      var formData = new FormData();
+      formData.append('file', file);
+      var resp = await fetch('http://localhost:3000/api/upload', {
+        method: "POST",
+        body: formData
+      });
+      var res = await resp.json();
+      // Show all warnings
+      if (res.warnings && res.warnings.length) {
+        msg.innerHTML = res.warnings.map(function(w){ return "<span style='color:orange;'>" + w + "</span>";}).join("<br>");
+      }
+      if (!res.sequence || !res.sequence.length) {
+        output.textContent = "No valid boarding sequence found!";
+        return;
+      }
+      var tableHtml = "<table border='2'><tr><th>Seq</th><th>Booking ID</th></tr>";
+      res.sequence.forEach(function(row){
+        tableHtml += "<tr><td>"+row.Seq+"</td><td>"+row.Booking_ID+"</td></tr>";
+      });
+      tableHtml += "</table>";
+      output.innerHTML = tableHtml;
+      
+    }
+  </script>
+</body>
+</html>
