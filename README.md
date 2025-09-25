@@ -43,6 +43,10 @@ node server.js
 4. **Open the UI:**
 Open `index.html` in your browser (or host with any lightweight static server).
 
+Resources/Images/Screenshot 2025-09-26 023137.png
+
+Resources/Images/Screenshot 2025-09-26 023109.png
+
 **Note:** Make sure your backend (`server.js`) is running at `localhost:3000` for uploads to work.
 
 ## Usage
