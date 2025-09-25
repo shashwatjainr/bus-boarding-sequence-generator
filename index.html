@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bus Boarding Sequence</title>
+<style>
+  :root {
+    --primary-color: #0d47a1;
+    --secondary-color: #1976d2;
+    --accent-color: #fbc02d;
+    --error-color: #d32f2f;
+    --warning-color: #f9a825;
+    --success-color: #388e3c;
+    --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    --font-mono: "Courier New", monospace;
+  }
+  body {
+    font-family: var(--font-sans);
+    margin: 2rem;
+    background: #fff;
+    color: #212121;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* Center heading */
+  h1 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    font-size: 2rem;
+    text-align: center;
+  }
+  #uploadArea {
+    border: 2px dashed var(--secondary-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--secondary-color);
+    cursor: pointer;
+    max-width: 420px;
+    user-select: none;
+    transition: background 0.3s, border-color 0.3s;
+    margin-bottom: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #uploadArea.dragover {
+    background: var(--secondary-color);
+    color: white;
+    border-color: var(--accent-color);
+  }
+  #uploadInput {
+    display: none;
+  }
+  #uploadButton {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background 0.3s;
+    width: 100%;
+    max-width: 420px;
+  }
+  #uploadButton:disabled {
+    background: #bbb;
+    cursor: not-allowed;
+  }
+  #uploadButton:hover:not(:disabled) {
+    background: var(--accent-color);
+    color: #212121;
+  }
+  #messages {
+    max-width: 600px;
+    margin: 1rem auto 2rem;
+    width: 100%;
+  }
+  .msg {
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .error {
+    background: #fdecea;
+    border: 1px solid var(--error-color);
+    color: var(--error-color);
+  }
+  .warning {
+    background: #fff8e1;
+    border: 1px solid var(--warning-color);
+    color: var(--warning-color);
+  }
+  .success {
+    background: #e8f5e9;
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+  }
+  /* Hide search container, removed */
+  #searchContainer {
+    display: none;
+  }
+  #resultTable {
+    margin: 0 auto;
+    width: 90%;
+    max-width: 600px;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    display: none;
+  }
+  #resultTable th, #resultTable td {
+    border: 1px solid #ddd;
+    padding: 0.6rem 1rem;
+    text-align: center;
+    position: relative;
+  }
+  #resultTable th {
+    background-color: var(--primary-color);
+    color: white;
+    user-select: none;
+  }
+  #resultTable tbody tr:hover {
+    background-color: var(--accent-color);
+    color: #212121;
+    cursor: default;
+  }
+  .tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #212121;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 5;
+  }
+  td:hover .tooltip {
+    opacity: 1;
+  }
+  #exportContainer {
+    max-width: 600px;
+    margin: 1.5rem auto 0;
+    text-align: right;
+    width: 90%;
+    max-width: 600px;
+    display: none;
+  }
+  #exportContainer button {
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin-left: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+  }
+  #exportContainer button:hover {
+    background: var(--accent-color);
+    color: #212121;
+  }
+  #spinnerOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
+  }
+  #spinnerOverlay.visible {
+    visibility: visible;
+  }
+  .spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+  @media print {
+    body {
+      margin: 0.5in;
+      background: white;
+      color: black;
+      font-size: 12pt;
+    }
+    #uploadArea, #uploadButton, #messages, #searchContainer, #exportContainer {
+      display: none;
+    }
+    #resultTable {
+      width: 100%;
+      max-width: none;
+      border: 1px solid black;
+      box-shadow: none;
+      display: table !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>Bus Boarding Sequence</h1>
+
+  <label id="uploadArea" for="uploadInput" tabindex="0" aria-label="Upload Excel file or drag and drop here">
+    Drag & Drop Excel file here, or click to select
+  </label>
+  <input type="file" id="uploadInput" accept=".xlsx" />
+
+  <div style="text-align:center;">
+    <button id="uploadButton" disabled>Upload & Show Sequence</button>
+  </div>
+
+  <div id="messages" aria-live="polite"></div>
+
+  <!-- Search container removed -->
+
+  <table id="resultTable" role="grid" aria-label="Boarding Sequence Table">
+    <thead>
+      <tr><th>Seq</th><th>Booking ID</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="exportContainer">
+    <button id="printBtn" title="Print Sequence">Print</button>
+    <button id="downloadCsvBtn" title="Download CSV">Download CSV</button>
+  </div>
+
+  <div id="spinnerOverlay" role="alert" aria-busy="true" aria-live="assertive">
+    <div class="spinner" aria-hidden="true"></div>
+  </div>
+
+<script>
+  const uploadInput = document.getElementById('uploadInput');
+  const uploadArea = document.getElementById('uploadArea');
+  const uploadButton = document.getElementById('uploadButton');
+  const messages = document.getElementById('messages');
+  const resultTable = document.getElementById('resultTable');
+  const resultTbody = resultTable.querySelector('tbody');
+  const exportContainer = document.getElementById('exportContainer');
+  const printBtn = document.getElementById('printBtn');
+  const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+  const spinnerOverlay = document.getElementById('spinnerOverlay');
+
+  let currentSequence = [];
+  let currentWarnings = [];
+
+  uploadArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+  uploadArea.addEventListener('dragleave', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+  });
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+      let file = e.dataTransfer.files[0];
+      if (file.name.endsWith('.xlsx')) {
+        uploadInput.files = e.dataTransfer.files;
+        uploadButton.disabled = false;
+        clearMessages();
+      } else {
+        showMessage('Only .xlsx files allowed.', 'error');
+      }
+    }
+  });
+  uploadArea.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      uploadInput.click();
+    }
+  });
+  uploadInput.addEventListener('change', e => {
+    uploadButton.disabled = !uploadInput.files.length;
+    clearMessages();
+  });
+
+  uploadButton.addEventListener('click', async () => {
+    clearMessages();
+    if (!uploadInput.files.length) {
+      showMessage('Please select an Excel file to upload.', 'error');
+      return;
+    }
+    spinnerOverlay.classList.add('visible');
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadInput.files[0]);
+      const response = await fetch('http://localhost:3000/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      spinnerOverlay.classList.remove('visible');
+
+      currentSequence = data.sequence || [];
+      currentWarnings = data.warnings || [];
+
+      if (!currentSequence.length) {
+        showMessage('No valid boarding sequence found.', 'error');
+        exportContainer.style.display = 'none';
+        resultTable.style.display = 'none';
+        return;
+      }
+
+      showSequenceTable(currentSequence);
+      if (currentWarnings.length) {
+        showWarnings(currentWarnings);
+      } else {
+        showMessage('Sequence generated successfully.', 'success');
+      }
+      exportContainer.style.display = 'block';
+    } catch {
+      spinnerOverlay.classList.remove('visible');
+      showMessage('Something went wrong. Please try again.', 'error');
+      exportContainer.style.display = 'none';
+      resultTable.style.display = 'none';
+    }
+  });
+
+  printBtn.addEventListener('click', () => window.print());
+
+  downloadCsvBtn.addEventListener('click', () => {
+    if (!currentSequence.length) return;
+    const csvHeaders = ['Seq', 'BookingID'];
+    const csvRows = currentSequence.map(r => [r.Seq, `"${r.BookingID}"`]);
+    const csvContent = csvHeaders.join(',') + '\n' + csvRows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'boarding_sequence.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  function showSequenceTable(sequence) {
+    resultTbody.innerHTML = '';
+    sequence.forEach(row => {
+      const tr = document.createElement('tr');
+      const seqTd = document.createElement('td');
+      seqTd.textContent = row.Seq;
+      const bookingTd = document.createElement('td');
+      bookingTd.textContent = row.BookingID;
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = 'Position based on boarding rules';
+      bookingTd.appendChild(tooltip);
+
+      tr.appendChild(seqTd);
+      tr.appendChild(bookingTd);
+      resultTbody.appendChild(tr);
+    });
+    resultTable.style.display = 'table';
+  }
+
+  function showMessage(msg, type) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + (type || 'success');
+    div.textContent = msg;
+    messages.appendChild(div);
+  }
+  function showWarnings(warnings) {
+    warnings.forEach(w => showMessage(w, 'warning'));
+  }
+  function clearMessages() {
+    messages.innerHTML = '';
+  }
+</script>
+</body>
+</html>
